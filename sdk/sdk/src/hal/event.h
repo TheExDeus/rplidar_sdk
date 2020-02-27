@@ -58,7 +58,6 @@ public:
         _event = CreateEvent(NULL, isAutoReset?FALSE:TRUE, isSignal?TRUE:FALSE, NULL);
 #else
         pthread_mutex_init(&_cond_locker, NULL);
-        pthread_cond_init(&_cond_var, NULL);
         pthread_condattr_init(&_attr);
         pthread_condattr_setclock(&_attr, CLOCK_MONOTONIC);
         pthread_cond_init(&_cond_var, &_attr);
@@ -123,11 +122,12 @@ public:
                 }else
                 {
                     timespec wait_time;
-                    timeval now;
-                    gettimeofday(&now,NULL);
 
-                    wait_time.tv_sec = timeout/1000 + now.tv_sec;
-                    wait_time.tv_nsec = (timeout%1000)*1000000ULL + now.tv_usec*1000;
+                    struct timespec current_monotonic;
+                    clock_gettime (CLOCK_MONOTONIC, &current_monotonic);
+
+                    wait_time.tv_sec = timeout/1000 + current_monotonic.tv_sec;
+                    wait_time.tv_nsec = (timeout%1000)*1000000ULL + current_monotonic.tv_nsec;
 
                     if (wait_time.tv_nsec >= 1000000000)
                     {
